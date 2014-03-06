@@ -38,7 +38,8 @@ int prodPin1 = 5;
 int prodPin2 = 6;
 int wpPin_VGA = 10;
 int wpPin_DVI = 11;
-product* prod_list[] = {&s280p2_1920_358, &s380p1_1920_538};
+product* prod_list[] = {&s280p2_1920_358, &s380p1_1920_538, 
+                        &m320m1_1920_1080};
 const prog_uchar strWriteSuccess[] PROGMEM = "Write success!";
 const prog_uchar strWriteFail[] PROGMEM = "Write fail!";
 const prog_uchar strWriting[] PROGMEM = "Writing...";
