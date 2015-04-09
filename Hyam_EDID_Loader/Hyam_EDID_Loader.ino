@@ -1,7 +1,14 @@
-/* EDID editor for HYAM
+/* EDID loader for HYAM
  * 
  * ChinTsung
- * 20 January 2014 
+ * 20 January 2014
+ * History: 
+ * ----------------------------------------------------------------------------------
+ *    date       name       description 
+ * 2015/04/01 chintsung   fix 1, add prodPin3, update exeBtnPin from 13 to 12 and 
+ *                        the mode from INPUT to INPUT_PULLUP. 
+ *
+ * ----------------------------------------------------------------------------------
  */
 
 #include <Wire.h>
@@ -31,14 +38,18 @@ LiquidCrystal_I2C lcd(LCD_ADDRESS, En_pin, Rw_pin, Rs_pin, D4_pin, D5_pin,
 byte buffer[256] = {0};
 byte prod_num = 255;     // current product number decided by the combination of prodPins
 byte current_source = 2;
-int exeBtnPin = 13;      // the number of the execution button pin
+//int exeBtnPin = 13;      // the number of the execution button pin
+int exeBtnPin = 12;      // the number of the execution button pin  fix 1
 //int modePin = 4;         // the number of the mode pin (read/write mode)
 int sourcePin =4;        // the number of the input source pin (VGA/DVI)
 int prodPin1 = 5;
 int prodPin2 = 6;
+int prodPin3 = 7;        // fix 1
 int wpPin_VGA = 10;
 int wpPin_DVI = 11;
-product* prod_list[] = {&s280p2_1920_358, &s380p1_1920_538, 
+product* prod_list[] = {&s280p5_1920_358, &s380p4_1920_538, 
+                        &dsd5028n_1920_358, &dsd5038n_1920_538,
+                        &s280m1_1920_358, &s380p6_1920_545,
                         &m320m1_1920_1080};
 const prog_uchar strWriteSuccess[] PROGMEM = "Write success!";
 const prog_uchar strWriteFail[] PROGMEM = "Write fail!";
@@ -48,11 +59,13 @@ const prog_uchar strWriting[] PROGMEM = "Writing...";
 void setup() {
   Serial.begin(9600);
   Wire.begin();        // join i2c bus as a Master
-  pinMode(exeBtnPin, INPUT);
+  //pinMode(exeBtnPin, INPUT);
+  pinMode(exeBtnPin, INPUT_PULLUP);  // fix 1
   //pinMode(modePin, INPUT);
   pinMode(sourcePin, INPUT);
   pinMode(prodPin1, INPUT_PULLUP);
   pinMode(prodPin2, INPUT_PULLUP);
+  pinMode(prodPin3, INPUT_PULLUP);  // fix 1
   pinMode(wpPin_VGA, OUTPUT);
   pinMode(wpPin_DVI, OUTPUT);
   
@@ -66,7 +79,8 @@ void setup() {
 void loop() {
   //byte mode = 0;        // the current mode, 0: read; 1: write
   byte state;           // the current state of the exe button pin
-  byte previous = LOW;  // the previous state of the exe button pin
+  //byte previous = LOW;  // the previous state of the exe button pin
+  byte previous = HIGH;  // the previous state of the exe button pin  fix 1
   
   // the following variables are long's because the time, measured in miliseconds,
   // will quickly become a bigger number than can be stored in an int.
@@ -82,7 +96,8 @@ void loop() {
   // if the exe button just went from LOW and HIGH and we've waited long enough
   // to ignore any noise on the circuit, toggle the exe pin and remember
   // the time
-  if (state==HIGH && previous==LOW && millis()-time>debounce) {
+  //if (state==HIGH && previous==LOW && millis()-time>debounce) {
+  if (state==LOW && previous==HIGH && millis()-time>debounce) {  // fix 1  
     switch (digitalRead(sourcePin)) {
       case 0:
         writeEDID(0, (prog_uchar*)prod_list[prod_num]->analog, 
@@ -178,6 +193,7 @@ boolean compareEDID(prog_uchar data[], unsigned int data_size) {
 void getProduct() {
   byte keys =   pow(2, 0)*digitalRead(prodPin1) 
               + pow(2, 1)*digitalRead(prodPin2)
+              + pow(2, 2)*digitalRead(prodPin3)  // fix 1
               ;
 
   if (keys != prod_num) {
